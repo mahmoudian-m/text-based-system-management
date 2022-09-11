@@ -13,6 +13,35 @@
 #   It includes usable tools to manage operating system
 #######################################################################
 
+# Check Program Dependencies
+declare -A package_list
+package_list["dialog"]=["dialog"]
+package_list["ifconfig"]=["net-tools"]
+package_list["nmtui"]=["network-manager"]
+check_dependencies() {
+  issues_count=0
+  for key in "${!package_list[@]}"; do
+    if ! which "${key}" &>/dev/null; then
+      echo -e "\e[1;31mDependencies Issue!! \e[0m
+      This program needs  $key program.
+      Hint: sudo apt-get install ${package_list[$key]}"
+      ((issues_count = issues_count + 1))
+    fi
+  done
+  if [[ ${issues_count} -ne 0 ]]; then
+    exit 1
+  fi
+}
+check_dependencies
+
+# Check Root Access
+if [[ $EUID -ne 0 ]]; then
+  dialog --backtitle "${BackgroundTitle}" --colors --msgbox \
+    "\Zb\Z1 Permission Denied!! \Zn\n\
+ This Program have to be executed as a root." 7 55
+  exit 1
+fi
+
 _temp="/tmp/answer.$$"
 PN=$(basename "$0")
 >$_temp
