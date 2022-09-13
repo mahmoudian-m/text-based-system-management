@@ -12,6 +12,24 @@
 #   it executes in on of TTYs of  debian based operating systems
 #   It includes usable tools to manage operating system
 #######################################################################
+# Default Titles
+VersionNumber=0.1
+MainTitle="Main Menu"
+BackgroundTitle="Text Based System Management"
+SystemSectionName="Host Information"
+SystemTitleName="System Information"
+IPAddressSectionName="Network Addresses"
+IPAddressTitleName="Network Interfaces"
+NetworkConfigurationSectionName="Network Configuration"
+NetworkConnectivitySectionName="PING Utility"
+NetworkConnectivityTitleName="PING Utility"
+ServiceManagementSectionName="Service Management"
+SystemResourceSectionName="System Resources"
+SystemResourceTitleName="System Resources"
+HaltSectionName="Halt"
+VersionSectionName="Halt"
+
+trap '' 2
 
 # Check Program Dependencies
 declare -A package_list
