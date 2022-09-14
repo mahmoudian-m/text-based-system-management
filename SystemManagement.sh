@@ -60,6 +60,41 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+#--------Shared Functions Section-----------#
+gauge() {
+  {
+    for I in $(seq 1 100); do
+      echo $I
+      sleep 0.005
+    done
+    echo 100
+  } | dialog --backtitle "${BackgroundTitle}- $1" \
+    --gauge "Progress" 6 60 0
+}
+#--------System Section-----------#
+system() {
+  IFS=","
+  system_info=($(hostnamectl | awk -F : 'gsub(/^[ \t]+/, "", $2) && NR==1||NR==6||NR==7||NR==8 {print $2","} '))
+  uptime=$(uptime | cut -d "," -f 1 | sed 's/^ *//g')
+  cpu_info=$(lscpu | awk -F : 'gsub(/^[ \t]+/, "", $2) && /Model name/{ print $2 } ' | tr -d '\t')
+  memory_info=$(free -h | head -n 2 | tail -n 1 | tr -s ' ' ' ' | cut -d " " -f 2)
+  IFS=$'\n'
+  storages_size=($(lsblk | grep -e "disk" | tr -s " " " " | cut -d " " -f4))
+  dialog --colors --backtitle "${BackgroundTitle}-${SystemSectionName}" \
+    --title "${SystemTitleName}" \
+    --msgbox "\Zb\Z1     Hostname:\Zn ${system_info[0]}\n\n\
+     \Zb\Z1Uptime:\Zn ${uptime}\n\n\
+     \Zb\Z1Operating System:\Zn${system_info[1]}\n\n\
+     \Zb\Z1Kernel:\Zn${system_info[2]}\n\n\
+     \Zb\Z1Architecture:\Zn${system_info[3]}\n\n\
+     \Zb\Z1Processor:\Zn ${cpu_info}\n\n
+     \Zb\Z1Storage:\Zn $(for index in "${!storages_size[@]}"; do
+      echo "Disk""${index}: ""${storages_size[$index]}"
+    done)\n\n\
+     \Zb\Z1Installed RAM:\Zn ${memory_info}" 20 90
+
+}
+
 _temp="/tmp/answer.$$"
 PN=$(basename "$0")
 >$_temp
