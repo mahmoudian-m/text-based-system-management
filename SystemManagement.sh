@@ -206,6 +206,55 @@ network_connectivity() {
     network_connectivity
   fi
 }
+#--------Services Section-----------#
+service_status() {
+  status=$(service "$1" status | awk '/Active:/ { print $3} ' | tr -d "()")
+  dialog --title "$service_name status" --msgbox \
+    "$1 service is ${status}" 10 50
+
+}
+service_action() {
+  gauge "${ServiceManagementSectionName}"
+  if service "${1}" "${2}" &>/dev/null; then
+    dialog --title "${service_name}" --msgbox "$2 service '$1' successfully" 10 50
+  else
+    dialog --title "${service_name}" --msgbox "$2 service '$1' unsuccessfully" 10 50
+  fi
+}
+select_service() {
+  services=()
+  while IFS=' ' read -r line; do services+=("$line" ""); done < <(service --status-all)
+
+  service=$(dialog --stdout \
+    --title "Service Management" \
+    --backtitle "${BackgroundTitle}- ${ServiceManagementSectionName}" \
+    --ok-label "Next" \
+    --menu "Select Service:" \
+    30 30 30 \
+    "${services[@]}")
+  echo $service
+}
+service_manager() {
+  gauge "${ServiceManagementSectionName}"
+  service_name_with_status="$(select_service)"
+  if [ "$service_name_with_status" == "" ]; then
+    return
+  fi
+  service_name="$(echo "$service_name_with_status" | cut -d " " -f4)"
+  dialog --backtitle "${BackgroundTitle}- ${ServiceManagementSectionName}" --title "$service_name_with_status" \
+    --menu "Take an action" 11 40 7 "01" "Status" \
+    "02" "Start" \
+    "03" "Stop" \
+    "04" "Restart" 2>$_temp
+  case $(cat $_temp) in
+  "") service_manager ;;
+  "01") service_status "${service_name}" ;;
+  "02") service_action "${service_name}" "start" ;;
+  "03") service_action "${service_name}" "stop" ;;
+  "04") service_action "${service_name}" "restart" ;;
+  esac
+  service_manager
+}
 
 _temp="/tmp/answer.$$"
 PN=$(basename "$0")
