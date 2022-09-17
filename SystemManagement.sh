@@ -151,6 +151,62 @@ network() {
   nmtui
   gauge "${NetworkConfigurationSectionName}"
 }
+#--------NetworkConnectivity Section-----------#
+check_connectivity() {
+  if ping "$1" -c "$2" -i "$3" &>/dev/null; then
+    dialog --backtitle "${BackgroundTitle}- ${NetworkConnectivitySectionName}" --msgbox "\nSuccessfully PING: $1" 9 52
+  else
+    dialog --backtitle "${BackgroundTitle}- ${NetworkConnectivitySectionName}" --msgbox "\nUnsuccessful PING: $1" 9 52
+  fi
+}
+select_gateway() {
+  gateways=()
+  while IFS=' ' read -r line; do gateways+=("$line" ""); done < <(ip route show default | awk ' {print $3} ')
+  gateway=$(dialog --stdout \
+    --title "Gateways" \
+    --backtitle "${BackgroundTitle}- ${NetworkConnectivitySectionName}" \
+    --ok-label "Next" \
+    --menu "Select an Gateway:" \
+    20 30 30 \
+    "${gateways[@]}")
+  echo $gateway
+}
+network_connectivity() {
+  menu_choices=("Default Gateways" '' "8.8.8.8" '' "Custom Hostname" '')
+  # Append gateway_menu to the menu_choices in a usable way.
+  for num in $(seq 0 $((${#gateway_menu[@]} - 1))); do
+    menu_choices[$((6 + $num))]=${gateway_menu[$num]}
+  done
+  dialog --backtitle "${BackgroundTitle}- ${NetworkConnectivitySectionName}" --title "${NetworkConnectivityTitleName}" \
+    --menu "Select an Option To Check Network Connectivity" 15 50 8 \
+    "${menu_choices[@]}" 2>$_temp
+  result=$(cat $_temp)
+  wait_for=1
+  times=3
+  if [ -n "$result" ]; then
+    if [ "$result" == "8.8.8.8" ]; then
+      gauge "${NetworkConnectivitySectionName}"
+      check_connectivity "8.8.8.8" $wait_for $times
+    elif [ "$result" == "Custom Hostname" ]; then
+      dialog --backtitle "${BackgroundTitle}- ${NetworkConnectivitySectionName}" \
+        --inputbox "Enter HostName Or Ip Addresses" 8 52 2>$_temp
+      host=$(cat $_temp)
+      if [ ! -z "$host" -a "$host" != " " ]; then
+        gauge "${NetworkConnectivitySectionName}"
+        check_connectivity "$host" $wait_for $times
+      fi
+    else
+      selected_gateway="$(select_gateway)"
+      if [ "$selected_gateway" == "" ]; then
+        network_connectivity
+      fi
+      gauge
+      check_connectivity "$selected_gateway" $wait_for $times
+    fi
+    network_connectivity
+  fi
+}
+
 _temp="/tmp/answer.$$"
 PN=$(basename "$0")
 >$_temp
