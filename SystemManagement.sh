@@ -94,6 +94,58 @@ system() {
      \Zb\Z1Installed RAM:\Zn ${memory_info}" 20 90
 
 }
+#--------IPAddress Section-----------#
+get_interface_ip_address() {
+  ifconfig "$1" | awk '{ print $2}' | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}"
+}
+get_interface_ip_net_mask() {
+  ifconfig "$1" | awk '{ print $4}' | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}"
+}
+get_interface_ip_hardware() {
+  ifconfig wlp0s20f3 | awk '{ print $2}' | grep -E -o "([0-9a-f]{2}:){5}.."
+}
+get_interface_ip_gateway() {
+  ip route show default | awk -v interface="$1" '$0 ~ interface {print $3} '
+}
+show_interface_info() {
+  if="$1"
+  address="$2"
+  netmask="$3"
+  gateway="$4"
+  hardware="$5"
+
+  dialog --backtitle "${BackgroundTitle}- Interface Details" --colors --title "$if" \
+    --msgbox "\Zb\Z1 IP Address:\Zn ${address:=-}\n\
+ \Zb\Z1Netmask:\Zn ${netmask:=-}\n\
+ \Zb\Z1Gateway:\Zn ${gateway:=-}\n\
+ \Zb\Z1Physical Address:\Zn ${hardware:=-}" 10 50
+
+}
+get_interfaces() {
+  ls /sys/class/net/
+}
+select_interface() {
+
+  interfaces=()
+  while IFS=' ' read -r line; do interfaces+=("$line" ""); done < <(get_interfaces)
+
+  interface=$(dialog --stdout \
+    --title "${IPAddressTitleName}" \
+    --backtitle "${BackgroundTitle}-${IPAddressSectionName} " \
+    --ok-label "Next" \
+    --menu "Select an interface:" \
+    20 30 30 \
+    "${interfaces[@]}")
+  echo $interface
+}
+ip_address() {
+  if="$(select_interface)"
+  if [ "$if" == "" ]; then
+    return
+  fi
+  show_interface_info "$if" "$(get_interface_ip_address $if)" "$(get_interface_ip_net_mask $if)" "$(get_interface_ip_gateway $if)" "$(get_interface_ip_hardware $if)"
+  ip_address
+}
 
 _temp="/tmp/answer.$$"
 PN=$(basename "$0")
