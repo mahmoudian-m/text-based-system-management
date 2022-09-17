@@ -146,7 +146,11 @@ ip_address() {
   show_interface_info "$if" "$(get_interface_ip_address $if)" "$(get_interface_ip_net_mask $if)" "$(get_interface_ip_gateway $if)" "$(get_interface_ip_hardware $if)"
   ip_address
 }
-
+#--------Network Section-----------#
+network() {
+  nmtui
+  gauge "${NetworkConfigurationSectionName}"
+}
 _temp="/tmp/answer.$$"
 PN=$(basename "$0")
 >$_temp
