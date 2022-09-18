@@ -12,6 +12,7 @@
 #   it executes in on of TTYs of  debian based operating systems
 #   It includes usable tools to manage operating system
 #######################################################################
+
 # Default Titles
 VersionNumber=0.1
 MainTitle="Main Menu"
@@ -146,11 +147,13 @@ ip_address() {
   show_interface_info "$if" "$(get_interface_ip_address $if)" "$(get_interface_ip_net_mask $if)" "$(get_interface_ip_gateway $if)" "$(get_interface_ip_hardware $if)"
   ip_address
 }
+
 #--------Network Section-----------#
 network() {
   nmtui
   gauge "${NetworkConfigurationSectionName}"
 }
+
 #--------NetworkConnectivity Section-----------#
 check_connectivity() {
   if ping "$1" -c "$2" -i "$3" &>/dev/null; then
@@ -206,6 +209,7 @@ network_connectivity() {
     network_connectivity
   fi
 }
+
 #--------Services Section-----------#
 service_status() {
   status=$(service "$1" status | awk '/Active:/ { print $3} ' | tr -d "()")
@@ -255,6 +259,7 @@ service_manager() {
   esac
   service_manager
 }
+
 #--------System Resources Section-----------#
 system_resources() {
   memory_usage=()
@@ -273,24 +278,6 @@ system_resources() {
       echo "(${index})"
     done)" 20 80
 }
-_temp="/tmp/answer.$$"
-PN=$(basename "$0")
->$_temp
-DVER=$(cat $_temp | head -1)
-
-### create main menu using dialog
-main_menu() {
-  dialog --backtitle "$BackgroundTitle" --title "${MainTitle}" \
-    --no-cancel \
-    --menu "Move sing [UP] [DOWN], [Enter] to select" 19 100 13 \
-    System "System Information" \
-    IPAddress "Show IP Addresses" \
-    Network/IP "Configure IP Addresses" \
-    PING "Check Host Connectivity" \
-    Services "Manage Services" \
-    HTOP "Monitor System Resources" \
-    Halt "Shutdown/Reboot System" \
-    Version "Current Version" 2>$_temp
 #--------Halt Section-----------#
 halt() {
   dialog --backtitle "${BackgroundTitle}- ${HaltSectionName}" \
@@ -309,6 +296,26 @@ version() {
   dialog --colors --backtitle "${BackgroundTitle}-${VersionSectionName} " \
     --msgbox "\Zb\Z1Text Based System Management\Zn\nVersion: ${VersionNumber}\nthis program is under MIT License" 9 52
 }
+
+_temp="/tmp/answer.$$"
+PN=$(basename "$0")
+>$_temp
+DVER=$(cat $_temp | head -1)
+
+### create main menu using dialog
+main_menu() {
+  dialog --backtitle "$BackgroundTitle" --title "${MainTitle}" \
+    --no-cancel \
+    --menu "Move sing [UP] [DOWN], [Enter] to select" 19 100 13 \
+    System "System Information" \
+    IPAddress "Show IP Addresses" \
+    Network/IP "Configure IP Addresses" \
+    PING "Check Host Connectivity" \
+    Services "Manage Services" \
+    HTOP "Monitor System Resources" \
+    Halt "Shutdown/Reboot System" \
+    Version "Current Version" 2>$_temp
+
   opt=${?}
   if [ $opt != 0 ]; then
     rm $_temp
