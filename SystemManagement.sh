@@ -291,7 +291,24 @@ main_menu() {
     HTOP "Monitor System Resources" \
     Halt "Shutdown/Reboot System" \
     Version "Current Version" 2>$_temp
-
+#--------Halt Section-----------#
+halt() {
+  dialog --backtitle "${BackgroundTitle}- ${HaltSectionName}" \
+    --radiolist "Select action" 15 50 8 \
+    01 "Shutdown" on \
+    02 "Reboot" off 2>$_temp
+  result=$(cat $_temp)
+  if [ "$result" == "01" ]; then
+    /sbin/shutdown now
+  elif [ "$result" == "02" ]; then
+    /sbin/reboot
+  fi
+}
+#--------Version Section-----------#
+version() {
+  dialog --colors --backtitle "${BackgroundTitle}-${VersionSectionName} " \
+    --msgbox "\Zb\Z1Text Based System Management\Zn\nVersion: ${VersionNumber}\nthis program is under MIT License" 9 52
+}
   opt=${?}
   if [ $opt != 0 ]; then
     rm $_temp
