@@ -255,7 +255,24 @@ service_manager() {
   esac
   service_manager
 }
-
+#--------System Resources Section-----------#
+system_resources() {
+  memory_usage=()
+  IFS=','
+  memory_usage=($(free --mega | awk '/Mem/ { printf "%.2f,%.2f,%.0f\n"  ,$2/1024,$3/1024,($3/$2)*100 }'))
+  cpu_load_average=()
+  cpu_load_average=($(top -bn1 | grep load | awk '{ printf "%.2f,%.2f,%.0f\n"  ,$(NF-2),$(NF-1),$(NF) }'))
+  used_storage=()
+  while IFS=' ' read -r line; do used_storage+=("$line"); done < <(df | grep -w -E "sda.{1,}|/" | tr -s " " " " | awk ' {print $1,$5} ')
+  IFS=","
+  dialog --colors --backtitle "${BackgroundTitle}- ${SystemResourceSectionName}" \
+    --title "${SystemResourceTitleName}" \
+    --msgbox "\Zb\Z1     Memory Usage:\Zn ${memory_usage[1]}G/${memory_usage[0]}G (${memory_usage[2]}%)\n\n\
+     \Zb\Z1CPU Load Average:\Zn ${cpu_load_average[0]}(1 minute) ${cpu_load_average[1]}(5 minutes) ${cpu_load_average[2]}(15 minutes)\n\n\
+     \Zb\Z1Disk(s) Usage:\Zn $(for index in "${used_storage[@]}"; do
+      echo "(${index})"
+    done)" 20 80
+}
 _temp="/tmp/answer.$$"
 PN=$(basename "$0")
 >$_temp
